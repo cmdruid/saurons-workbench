@@ -1,0 +1,4 @@
+app
+build/out/*
+snapshot/*
+!snapshot/README.md

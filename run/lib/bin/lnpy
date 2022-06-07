@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+## Extention of lightning-cli interface.
+
+from shlex    import split
+from shutil   import which
+from argparse import ArgumentParser
+
+import subprocess
+import json
+
+CLI = "lightning-cli"
+VERBOSE = False
+
+
+def lcli(cmd, args='', rawFormat=False):
+  if which(CLI) is None:
+    ## If binary does not exist, raise exception.
+    raise Exception(f"{CLI} not found! Check if it is installed in your PATH.")
+  
+  arglist = split(f"{CLI} {cmd} {args}")
+  process = subprocess.run(arglist, capture_output=True)
+
+  if process.returncode != 0:
+    ## If return code not 0, raise an exception.
+    errStr = f"{process.stderr.decode('utf8')}"
+    stdStr = json.dumps(json.loads(process.stdout.decode('utf8')), indent=2)
+    raise Exception(f"Error returned code {process.returncode}: {errStr}\n{stdStr}")
+  if rawFormat:
+    return process.stdout.decode('utf8')
+  return json.loads(process.stdout.decode('utf8'))
+
+
+def getbalance():
+  outputs = lcli("listfunds")["outputs"]
+  return sum([ output["value"] for output in outputs if output["status"] == "confirmed" ])
+
+
+def getpeers(id=None):
+  peers = lcli("listpeers")["peers"]
+  if id:
+    return next((x for x in peers if x["id"] in id), None)
+  return peers
+
+
+def getpeerlist():
+  return [ peer["id"] for peer in getpeers() ]
+
+
+def getconnectedpeers():
+  return [ peer["id"] for peer in getpeers() if peer["connected"] ]
+
+
+def getchannels():
+  return lcli("listfunds")["channels"]
+
+
+def getchannelstates(states):
+  return [ channel for channel in getchannels() if channel["state"] in states ]
+
+
+def getpeerchannels(id, states=[ "CHANNELD_NORMAL" ]):
+  return [ channel for channel in getpeers(id)["channels"] if channel["state"] in states ]
+
+
+def peerchannelcount(id):
+  return len(getpeerchannels(id))
+
+
+def getconfirmedchannels(id):
+  return getpeers(id)["channels"]
+
+
+def confirmedchannelcount(id):
+  return len(getpeerchannels(id))
+
+
+def peerchannelbalance(id):
+  channels = [ ch for ch in getpeerchannels(id) if ch["state"] == "CHANNELD_NORMAL" ]
+  if len(channels):
+    funds = channels[0]
+    spendable  = msat_to_sat(funds['spendable_msatoshi'])
+    receivable = msat_to_sat(funds['receivable_msatoshi'])
+    return "{} / {}".format(spendable, receivable)
+  else:
+    return 0
+
+
+def ischannelbalanced(id):
+  funds  = peerchannelbalance(id)
+  local  = int(funds["local_msat"].replace('msat', ''))
+  remote = int(funds["remote_msat"].replace('msat', ''))
+  if not local or not remote:
+    return False
+  return abs(local / remote) > 0.25
+
+
+def msat_to_sat(val):
+  if type(val) is str:
+    val = int(string.replace('msat', ''))
+  return val / 1000 if val else 0
+
+
+def print_result(result):
+  if result is None:
+    return  ## If result is None, return nothing.
+  elif type(result) is list: 
+    if len(result) < 1:
+      return  ## If list is empty, return nothing.
+    elif type(result[0]) is str:
+      print('\n'.join(result))  ## If list of strings, use shell-friendly format.
+    else:
+      print(json.dumps(result, indent=2))  ## Print formatted JSON.
+  elif type(result) is dict:
+    print(json.dumps(result, indent=2))  ## Print formatted JSON.
+  else:                           
+    print(result)
+  return
+
+
+def main():
+  parser = ArgumentParser(description=f"Advanced {CLI} utility")
+  parser.add_argument('command', type=str, help="Command to execute.")
+  parser.add_argument('arguments', type=str, nargs='*', help="Arguments to pass into command.")
+  parser.add_argument('-v', '--verbose', action='store_true', help="Use verbose output.")
+  args = parser.parse_args()
+
+  VERBOSE   = args.verbose
+  command   = args.command
+  arguments = args.arguments
+
+  if not arguments:
+    arguments=''
+
+  try:
+    if command not in globals():
+      ## If a command is does not exist, run it directly.
+      result = lcli(command, arguments)
+    elif arguments:
+      ## Call the named method with arguments.
+      result = globals()[command](*arguments)
+    else:
+      ## Call the named method without arguments.
+      result = globals()[command]()
+
+    print_result(result)
+
+  except Exception as e:
+    if VERBOSE:
+      raise e
+    else:
+      print(f"Error: {e}")
+
+if __name__ == "__main__":
+  main()
