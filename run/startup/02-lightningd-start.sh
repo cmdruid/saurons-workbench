@@ -50,6 +50,10 @@ fprint() {
   printf '%s\n' "$IND $newline"
 }
 
+lcli() {
+  [ -n "$1" ] && lightning-cli --network=$CHAIN $@
+}
+
 ###############################################################################
 # Script
 ###############################################################################
@@ -90,7 +94,7 @@ if [ -z "$DAEMON_PID" ]; then
 
   ## Configure Sauron if plugin is present.
   if [ -d "$CONF_PATH/plugins/sauron" ]; then
-    printf "Adding sauron configuration ..."
+    printf "Adding sauron configuration"
     [ "$CHAIN" = "testnet" ] && esplora_net="/testnet"
     config="$config --disable-plugin=bcli"
     config="$config --plugin=$CONF_PATH/plugins/sauron/sauron.py"
@@ -114,7 +118,9 @@ if [ -z "$DAEMON_PID" ]; then
 
   ## Start lightning and wait for it to load.
   echo && printf "Starting lightning daemon" && templ prog
-  lightningd $config > $LINEOUT 2>&1; tail -f $LOGS_FILE | while read line; do
+  lightningd $config > $LINEOUT 2>&1
+  [ ! -e $LOGS_FILE ] && printf "lightningd failed to start!" && exit 1
+  tail -f $LOGS_FILE | while read line; do
     [ -n "$DEVMODE" ] && fprint "$line"
     echo "$line" | grep "Server started with public key" > /dev/null 2>&1
     if [ $? = 0 ]; then

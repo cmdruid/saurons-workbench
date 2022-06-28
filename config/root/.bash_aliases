@@ -17,6 +17,9 @@ alias torlog='tail -f /var/log/tor/notice.log'
 ## Get QR codes for onion strings.
 alias qrclnonion='cat /data/tor/services/cln/hostname | qrencode -m 2 -t "ANSIUTF8"'
 
+## Get QR code for lightning funding address.
+qrclnfunds='cat /data/lightning/fund.address | qrencode -m 2 -t "ANSIUTF8"'
+
 ## Generates a sparko QR code for connecting to zeus via Tor.
 ## Must have tor enabled so that a hostname is generated!
 alias qrsparko='\

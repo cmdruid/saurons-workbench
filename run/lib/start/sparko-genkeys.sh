@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/usr/bin/env bash
 ## Sparko configuration.
 
 set -E

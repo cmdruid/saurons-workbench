@@ -7,7 +7,7 @@ set -E
 # Environment
 ###############################################################################
 
-DEFAULT_CHAIN="testnet"
+DEFAULT_CHAIN="bitcoin"
 
 DENVPATH=".env"         ## Path to your local .env file.
 WORKPATH="$(pwd)"       ## Absolute path to use for this directory.
@@ -29,7 +29,7 @@ Rapidly prototype and launch a core lightning stack.
 
 Example: $(basename $0) build
          $(basename $0) start alice
-         $(basename $0) start bob --chain testnet
+         $(basename $0) start bob --chain main
 
 Arguments:
   TAG             Tag name used to identify the container.
@@ -75,6 +75,17 @@ please visit the github page: https://github.com:cmdruid/saurons-workbench
 ###############################################################################
 # Methods
 ###############################################################################
+
+chk_arg() {
+  ( [ -z "$1" ] || [ -n "$(echo $1 | grep -E '^-')" ] ) \
+  && echo "Bad value! Received an argument instead: $1" && exit 1 \
+  || return 0
+}
+
+add_arg() {
+  ## Construct a string of arguments.
+  chk_arg $1 && ARGS_STR="$ARGS_STR -e $1"
+}
 
 network_exists() {
   docker network ls | grep $NET_NAME > $LINE_OUT 2>&1

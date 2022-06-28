@@ -11,11 +11,14 @@ Rapidly prototype and launch a core lightning stack using Sauron and Workbench.
 git clone *this repository url*
 cd saurons-workbench
 
-## To launch a node.
-./workbench.sh start {nodename}
+## Launch a node on testnet.
+./workbench.sh start alice --chain testnet
+
+## Launch a node on mainnet.
+./workbench.sh start bob
 
 ## To see a list of commands.
-./workbench --help 
+./workbench --help
 ```
 
 This project uses a stripped version of regtest-workbench. For a deeper introduction, check out https://github.com/cmdruid/regtest-workbench
