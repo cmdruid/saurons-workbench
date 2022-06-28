@@ -198,8 +198,8 @@ add_mount() {
 add_ports() {
   ## If ports are specified, build a port string.
   if chk_arg $1; then for port in `echo $1 | tr ',' ' '`; do
-    src=`printf $1 | awk -F ':' '{ print $1 }'`
-    dest=`printf $1 | awk -F ':' '{ print $2 }'`
+    src=`printf $port | awk -F ':' '{ print $1 }'`
+    dest=`printf $port | awk -F ':' '{ print $2 }'`
     if [ -z "$dest" ]; then dest="$src"; fi
     PORTS="$PORTS -p $src:$dest"
   done; fi
@@ -218,9 +218,6 @@ cleanup() {
 ###############################################################################
 
 main() {
-  [ -n "$VERBOSE" ] && echo \
-  "Configuration string: $HEADMODE $RUN_FLAGS $MOUNTS $PORTS $ENV_STR $ARGS_STR $PASSTHRU\n"
-
   ## Start container script.
   docker run -t \
     --name $SRV_NAME \
@@ -243,7 +240,7 @@ for arg in "$@"; do
     build)             build_image $2;                   exit 10;;
     rebuild)           remove_image $2; build_image $2;  exit 10;;
     login)             login_container $2;               exit 11;;
-    start)             TAG=$2                            shift 2;;
+    start)             TAG=$2;                           shift 2;;
     -b|--build)        BUILD=1;                          shift  ;;
     -r|--rebuild)      REBUILD=1;                        shift  ;;
     -v|--verbose)      VERBOSE=1; LINE_OUT="/dev/tty";   shift  ;;
@@ -300,6 +297,8 @@ fi
 
 ## Call main container script based on run mode.
 echo "Starting container for $SRV_NAME in $RUN_MODE mode ..."
+[ -n "$VERBOSE" ] && echo \
+  "Configuration string: $HEADMODE $RUN_FLAGS $MOUNTS $PORTS $ENV_STR $ARGS_STR $PASSTHRU\n"
 if [ -n "$HEADLESS" ]; then
   main & exit 11
 elif [ -n "$DEVMODE" ]; then
