@@ -138,7 +138,20 @@ remove_image() {
   printf "done.\n"
 }
 
+check_binaries() {
+  if [ ! -d "build/out" ]; then mkdir -p build/out; fi
+  for file in build/dockerfiles/*; do
+    name="$(basename -s .dockerfile $file)"
+    if [ -z "$(ls build/out | grep $name)" ]; then 
+      printf "Binary for $name is missing! Building from source ..."
+      BUILDPATH=$WORKPATH/build build/build.sh $file 
+    fi
+  done
+  [ -n "$EXT" ] && echo "All binary files are compiled and ready!"
+}
+
 build_image() {
+  check_binaries
   [ -n "$1" ] && IMG_NAME="$1"
   [ -n "$IMG_NAME" ] || IMG_NAME="$DEFAULT_CHAIN-img"
   printf "Building image for $IMG_NAME from dockerfile ... "
