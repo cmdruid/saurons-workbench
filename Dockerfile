@@ -12,13 +12,13 @@ RUN apt-get update && apt-get install -y \
   openssl procps python3 python3-pip qrencode socat xxd neovim
 
 ## Install python modules.
-RUN pip3 install Flask pyln-client
+RUN pip3 install pyln-client requests[socks]
 
 ## Install Node.
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash - && apt-get install -y nodejs
 
 ## Install node packages.
-RUN npm install -g npm yarn
+RUN npm install -g npm yarn clightningjs
 
 ## Copy over binaries.
 COPY build/out/* /tmp/bin/
@@ -42,6 +42,11 @@ RUN rm -rf /tmp/* /var/tmp/*
 ## Uncomment this if you also want to wipe all repository lists.
 #RUN rm -rf /var/lib/apt/lists/*
 
+## Install RTL REST API.
+RUN PLUGPATH="$CLNPATH/plugins" && mkdir -p $PLUGPATH && cd $PLUGPATH \
+  && git clone https://github.com/Ride-The-Lightning/c-lightning-REST.git cl-rest \
+  && cd cl-rest && npm install
+
 ## Configure user account for Tor.
 # RUN addgroup tor \
 #   && adduser --system --no-create-home tor \
@@ -51,6 +56,12 @@ RUN rm -rf /tmp/* /var/tmp/*
 ## Copy configuration and run environment.
 COPY config /
 COPY run $RUNPATH/
+
+## Make sure plugins are executable.
+RUN chmod +x /root/.lightning/plugins/*
+
+## Create required directories.
+RUN mkdir -p /var/log/lightning
 
 ## Add bash aliases to .bashrc.
 RUN alias_file="~/.bash_aliases" \
@@ -74,7 +85,6 @@ ENV LOGPATH="/var/log"
 ARG BTCPATH="$HOMEDIR/.bitcoin"
 ENV LNPATH="$HOMEDIR/.lightning"
 ENV PLUGPATH="$RUNPATH/plugins/"
-ENV LNRPCPATH="$LNPATH/regtest/lightning-rpc"
 
 WORKDIR $HOMEDIR
 
