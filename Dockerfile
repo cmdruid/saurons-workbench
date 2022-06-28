@@ -12,13 +12,7 @@ RUN apt-get update && apt-get install -y \
   openssl procps python3 python3-pip qrencode socat xxd neovim
 
 ## Install python modules.
-RUN pip3 install Flask pyln-client
-
-## Install Node.
-RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash - && apt-get install -y nodejs
-
-## Install node packages.
-RUN npm install -g npm yarn
+RUN pip3 install pyln-client requests[socks]
 
 ## Copy over binaries.
 COPY build/out/* /tmp/bin/
@@ -51,6 +45,12 @@ RUN rm -rf /tmp/* /var/tmp/*
 ## Copy configuration and run environment.
 COPY config /
 COPY run $RUNPATH/
+
+## Make sure plugins are executable.
+RUN chmod +x /root/.lightning/plugins/*
+
+## Create required directories.
+RUN mkdir -p /var/log/lightning
 
 ## Add bash aliases to .bashrc.
 RUN alias_file="~/.bash_aliases" \

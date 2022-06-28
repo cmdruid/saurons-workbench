@@ -2,14 +2,14 @@
 ## For more information on how to configure this file, see:
 ## https://github.com/ElementsProject/lightning/blob/master/doc/lightningd-config.5.md
 
-## Sets the network we are running.
-network=bitcoin
-
 ## Sets the working directory.
 lightning-dir=/data/lightning
 
 ## Sets the logfile path.
 log-file=/var/log/lightning/lightningd.log
+
+## Use a custom bitcoin back-end.
+##bitcoin-cli=/root/run/plugins/esplora-bcli.py
 
 ## Location of the wallet file.
 #wallet=sqlite3:///data/lightning/wallet.sqlite3:/data/backup/wallet.sqlite3
