@@ -18,6 +18,61 @@ ESC_KEYS="ctrl-z"       ## Escape sequence for detaching from terminals.
 DATAPATH="data"         ## Default path for a node's interal storage.
 
 ###############################################################################
+# Usage
+###############################################################################
+
+usage() {
+  printf "
+Usage: $(basename $0) [ OPTIONS ] TAG
+
+Rapidly prototype and launch a core lightning stack.
+
+Example: $(basename $0) build
+         $(basename $0) start alice
+         $(basename $0) start bob --chain testnet
+
+Arguments:
+  TAG             Tag name used to identify the container.
+
+Build Options  |  Parameters  |  Description
+  -h, --help                     Display this help text and exit.
+  -b, --build                    Build a new dockerfile image, using existing cache.
+  -r, --rebuild                  Delete the existing cache, and build a new image from source.
+  -i, --devmode                  Start container in devmode (mounts ./run, does not start entrypoint).
+  -H, --headless                 Start container in headless mode (does not connect to terminal at start).
+  -w, --wipe                     Delete the existing data volume, and create a new volume.
+  -r, --rest                     Enable the CL-REST interface for this node.
+  -t, --tor                      Enable the use of Tor and onion services for this node.
+  -M, --mount     INT:EXT        Declare a path to mount within the container. Can be declared multiple times.
+  -P, --ports     PORT1,PORT2    List a comma-separated string of ports to open within the container.
+  -T, --passthru  STRING         Pass through an argument string to the docker run script.
+  -v, --verbose                  Outputs more information into the terminal (useful for debugging).
+
+Other Options:
+  Utility commands for managing images and nodes.
+
+  build                          Compiles any missing binary files and builds the image.
+  rebuild                        Removes the existing image cache and builds from scratch.
+  login           TAG            Login to an existing node that is currently running.
+
+Example Commands:
+  $(basename $0) compile         Example command for pre-compiling all binaries in build/dockerfiles.
+  $(basename $0) login alice     Example command for logging into the terminal for alice.
+  $(basename $0) spawn regswarm  Example command for spawning nodes with 'regswarm' domain and default spawn.conf file.
+
+Example Flags:  
+  --mount app:/root/app     Declares a path to be mounted within the container. Paths can be relative 
+                            or absolute.
+
+  --ports 9375,80:8080      Declare a list of ports to be forwarded from within the container. You can
+                            also specify a different internal:external destination for each port.
+
+For more information, or if you want to report any bugs / issues, 
+please visit the github page: https://github.com:cmdruid/saurons-workbench
+\n"
+}
+
+###############################################################################
 # Methods
 ###############################################################################
 
@@ -170,13 +225,13 @@ for arg in "$@"; do
     -v|--verbose)      VERBOSE=1; LINE_OUT="/dev/tty";   shift  ;;
     -w|--wipe)         WIPE=1;                           shift  ;;
     -d|--devmode)      DEVMODE=1;                        shift  ;;
-    -v|--verbose)      VERBOSE=1; LINE_OUT="/dev/tty";   shift  ;;
+    -H|--headless)     HEADLESS=1; HEADMODE="";          shift  ;;
     -T|--passthru)     PASSTHRU=$2;                      shift 2;;                      
     -n|--chain)        CHAIN=$2;                         shift 2;;
     -i|--image)        IMG_NAME=$2;                      shift 2;;
     -M|--mount)        add_mount $2;                     shift 2;;
     -P|--ports)        add_ports $2;                     shift 2;;
-    --no-kill)         NOKILL=1;                         shift  ;;
+    -t|--tor)          add_arg "TOR_NODE=1";             shift  ;;
   esac
 done
 

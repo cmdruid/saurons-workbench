@@ -9,17 +9,39 @@ set -E
 
 BIN_NAME="lightningd"
 
-DATA_PATH="/data/lightning"
-CONF_PATH="$HOME/.lightning"
-LOGS_PATH="/var/log/lightning"
+DATA_PATH="$DATAPATH/lightning"
+CONF_PATH="$LNPATH"
+LOGS_PATH="$LOGPATH/lightning"
+
 CONF_FILE="$CONF_PATH/config"
 LOGS_FILE="$LOGS_PATH/lightningd.log"
+KEYS_FILE="$DATA_PATH/sparko.keys"
+CRED_FILE="$DATA_PATH/sparko.login"
+FUND_FILE="$DATA_PATH/fund.address"
 
 esplora_net=""
 
 ###############################################################################
 # Methods
 ###############################################################################
+
+gen_keystr() {
+  [ -n "$1" ] && (
+    for key in `cat $1`; do
+      val=`printf "$key" | awk -F '=' '{ print $2 }'`
+      keystr="$keystr$val;"
+    done
+    printf %s "--sparko-keys=$keystr"
+  )
+}
+
+gen_logstr() {
+  [ -n "$1" ] && (
+    SPARK_USER=`cat $1 | kgrep USERNAME`
+    SPARK_PASS=`cat $1 | kgrep PASSWORD`
+    printf %s "--sparko-login=$SPARK_USER:$SPARK_PASS"
+  )
+}
 
 fprint() {
   col_offset=2
@@ -76,6 +98,15 @@ if [ -z "$DAEMON_PID" ]; then
     templ ok
   fi
 
+  ## Configure sparko keys.
+  echo && printf "Adding sparko key configuration to lightningd:"
+  if ! ( [ -e "$KEYS_FILE" ] && [ -e "$CRED_FILE" ] ); then
+    printf "\n$IND Generating keys for sparko plugin"
+    $LIBPATH/start/sparko-genkeys.sh
+  fi
+  config="$config $(gen_keystr $KEYS_FILE) $(gen_logstr $CRED_FILE)"
+  templ ok
+
   [ -n "$DEVMODE" ] && ( 
     echo && printf "Config string:"
     for string in $config; do printf "\n$IND $string"; done && templ ok
@@ -94,4 +125,41 @@ if [ -z "$DAEMON_PID" ]; then
 
 else 
   printf "Lightning daemon is running under PID: $(templ hlight $DAEMON_PID)" && templ ok
+fi
+
+## Start CL-REST Server
+[ -n "$REST_NODE" ] && $LIBPATH/start/cl-rest-start.sh
+
+###############################################################################
+# Payment Configuration
+###############################################################################
+
+## Generate a funding address.
+if [ ! -e "$FUND_FILE" ] || [ -z "$(cat $FUND_FILE)" ]; then
+  printf "Generating new payment address for lightning"
+  lcli newaddr | jgrep bech32 > $FUND_FILE
+  templ ok
+fi
+
+###############################################################################
+# Plugins
+###############################################################################
+
+## Enable plugins
+if [ -d "$PLUGPATH" ]; then
+  plugins=`find $PLUGPATH -maxdepth 1 -type d`
+  if [ -n "$plugins" ]; then
+    echo && printf "Plugins:\n"
+    for plugin in $plugins; do
+      name=$(basename $plugin)
+      if case $name in .*) ;; *) false;; esac; then continue; fi
+      plugin_name=`find $plugin -maxdepth 1 -name $name.*`
+      if [ -e "$plugin_name" ]; then
+        printf "$IND Enabling $name plugin"
+        chmod +x $plugin_name
+        lcli plugin start $plugin_name > /dev/null 2>&1
+        templ ok
+      fi
+    done
+  fi
 fi

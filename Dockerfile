@@ -14,6 +14,12 @@ RUN apt-get update && apt-get install -y \
 ## Install python modules.
 RUN pip3 install pyln-client requests[socks]
 
+## Install Node.
+RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash - && apt-get install -y nodejs
+
+## Install node packages.
+RUN npm install -g npm yarn clightningjs
+
 ## Copy over binaries.
 COPY build/out/* /tmp/bin/
 
@@ -35,6 +41,11 @@ RUN rm -rf /tmp/* /var/tmp/*
 
 ## Uncomment this if you also want to wipe all repository lists.
 #RUN rm -rf /var/lib/apt/lists/*
+
+## Install RTL REST API.
+RUN PLUGPATH="$CLNPATH/plugins" && mkdir -p $PLUGPATH && cd $PLUGPATH \
+  && git clone https://github.com/Ride-The-Lightning/c-lightning-REST.git cl-rest \
+  && cd cl-rest && npm install
 
 ## Configure user account for Tor.
 # RUN addgroup tor \
@@ -74,7 +85,6 @@ ENV LOGPATH="/var/log"
 ARG BTCPATH="$HOMEDIR/.bitcoin"
 ENV LNPATH="$HOMEDIR/.lightning"
 ENV PLUGPATH="$RUNPATH/plugins/"
-ENV LNRPCPATH="$LNPATH/regtest/lightning-rpc"
 
 WORKDIR $HOMEDIR
 

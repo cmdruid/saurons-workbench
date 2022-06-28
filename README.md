@@ -1,16 +1,24 @@
-# cln-workbench
+# saurons-workbench
 
-Launch simple and light-weight core lightning daemons using Docker.
+Rapidly prototype and launch a core lightning stack using Sauron and Workbench.
 
 ## How to use
 
 *Make sure that docker is installed, and you are part of docker group.*
 
 ```
+## Download the repository onto your machine.
 git clone *this repository url*
-cd cln-workspace
+cd saurons-workbench
+
+## To launch a node.
 ./workbench.sh start {nodename}
+
+## To see a list of commands.
+./workbench --help 
 ```
+
+This project uses a stripped version of regtest-workbench. For a deeper introduction, check out https://github.com/cmdruid/regtest-workbench
 
 ## Contribution
 
