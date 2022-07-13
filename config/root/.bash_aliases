@@ -14,6 +14,9 @@ alias listsockets='ss -tunlp'
 alias ldlog='tail -f /var/log/lightning/lightningd.log'
 alias torlog='tail -f /var/log/tor/notice.log'
 
+## QR Code shortcut.
+alias qrcode='qrencode -m 2 -t "ANSIUTF8"'
+
 ## Get QR codes for onion strings.
 alias qrclnonion='cat /data/tor/services/cln/hostname | qrencode -m 2 -t "ANSIUTF8"'
 

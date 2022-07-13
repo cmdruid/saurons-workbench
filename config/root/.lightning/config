@@ -45,7 +45,15 @@ experimental-dual-fund
 experimental-onion-messages
 experimental-offers
 
-## Sparko plugin
+## Sparko plugin.
 plugin=/root/.lightning/plugins/sparko
 sparko-host=0.0.0.0
 sparko-port=9737
+
+## Webhook plugin.
+#plugin=/root/.lightning/plugins/webhook
+#webhook=https://myurl.com/myhandler?filter-event=invoice_payment
+
+## Peerswap
+plugin=/root/.lightning/plugins/peerswap
+log-level=debug:plugin-peerswap-plugin

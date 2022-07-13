@@ -7,19 +7,11 @@ set -E
 # Environment
 ###############################################################################
 
-SRC_PATH="$LNPATH/plugins/cl-rest"
-
-CERT_PATH="/data/certs"
+SRC_PATH="$HOME/app/cl-rest"
+CERT_PATH="$DATAPATH/certs"
 CERT_LINK="$SRC_PATH/certs"
-
-CONF_NAME="cl-rest-config.json"
-CONF_FILE="$CONFPATH/cl-rest/$CONF_NAME"
-
 LOG_FILE="$LOGPATH/lightning/cl-rest.log"
-REST_FILE="cln-rest.conf"
-
-ONION_HOST="$ONIONPATH/cln/hostname"
-DEFAULT_CLN_REST_PORT=3001
+CONF_FILE="$SRC_PATH/cl-rest-config.json"
 
 ###############################################################################
 # Methods
@@ -35,13 +27,14 @@ finish() {
 
 trap finish EXIT
 
-if [ -z "$CLN_REST_PORT" ]; then CLN_REST_PORT=$DEFAULT_CLN_REST_PORT; fi
-
 DAEMON_PID=`pgrep -f "node cl-rest.js"`
 
 if [ -z "$DAEMON_PID" ]; then
 
   echo && printf "Starting CL-REST server:\n"
+
+  ## Create log directory if it does not exist.
+  
   
   ## Create certificate directory if does not exist.
   if [ ! -d "$CERT_PATH" ]; then 
@@ -49,17 +42,14 @@ if [ -z "$DAEMON_PID" ]; then
     mkdir -p $CERT_PATH
   fi
 
-  ## Symlink configuration file to root of project.
-  if [ ! -e "$SRC_PATH/$CONF_NAME" ]; then
-    printf "$IND Linking configuration file.\n"
-    ln -s $CONF_FILE $SRC_PATH/$CONF_NAME
-  fi
-
   ## Symlink the certificates for the REST API to persistent storage.
   if [ ! -e "$CERT_LINK" ]; then
     printf "$IND Adding symlink for access macaroon.\n"
     ln -s $CERT_PATH $CERT_LINK
   fi
+
+  ## Set the chain path in the config.
+  sed -i "s/%CHAIN%/$CHAIN/g" $CONF_FILE
 
   ## Start the CL-REST server.
   printf "$IND Starting CL-REST server.\n"
@@ -71,9 +61,9 @@ if [ -z "$DAEMON_PID" ]; then
     echo "$line" | grep "cl-rest api server is ready" > /dev/null 2>&1
     if [ $? = 0 ]; then
       [ -n "$(pgrep -f 'node cl-rest.js')" ] \
-        && printf "$IND CL-REST server is now running!" \
-        && templ ok && exit 0 \
-        || printf "Failed to start!" && templ skip && exit 0
+        && ( printf "$IND CL-REST server is now running!" && templ ok ) \
+        || ( printf "Failed to start!" && templ skip )
+      exit
     fi
   done
 
@@ -81,21 +71,3 @@ else
   echo && printf "CL-REST process is running under PID: $(templ hlight $DAEMON_PID)"
   templ ok
 fi
-
-###############################################################################
-# Share Configuration
-###############################################################################
-
-## Get active hostname.
-if [ -n "$(pgrep tor)" ] && [ -e "$ONION_HOST" ]; then 
-  CLN_REST_HOST=`cat $ONION_HOST` 
-else 
-  CLN_REST_HOST="$HOSTNAME"
-fi
-
-## Generate configuration.
-printf "## CLN-REST Configuration
-REST_HOST=$CLN_REST_HOST
-REST_PORT=$CLN_REST_PORT
-AUTH_TOKEN=$(cat $CERT_PATH/access.macaroon | xxd -p -c 1000)
-" > $SHAREPATH/$HOSTNAME/$REST_FILE

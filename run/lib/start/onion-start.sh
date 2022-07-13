@@ -12,8 +12,8 @@ SERV_PATH="$DATA_PATH/services"
 CONF_PATH="/etc/tor"
 COOK_PATH="/var/lib/tor"
 LOGS_PATH="/var/log/tor"
-
 CONF_FILE="$CONF_PATH/torrc"
+PEER_PORT=9735
 
 ###############################################################################
 # Methods
@@ -46,9 +46,13 @@ if [ -z "$DAEMON_PID" ]; then
   if [ ! -d "$LOGS_PATH" ]; then mkdir -p -m 700 $LOGS_PATH; fi
   if [ ! -d "$SERV_PATH" ]; then mkdir -p -m 700 $SERV_PATH; fi
   if [ ! -d "$COOK_PATH" ]; then mkdir -p -m 700 $COOK_PATH; fi
-
+[
   ## If config file missing, raise error and exit.
   if [ ! -e "$CONF_FILE" ]; then echo "$CONF_FILE is missing!" && exit 1; fi
+
+  ## Add port forwarding based on chain.
+  [ "$CHAIN" = "testnet" ] && PEER_PORT=19735
+  printf "HiddenServicePort $PEER_PORT 127.0.0.1:$PEER_PORT\n" > $CONF_FILE
 
   ## Start tor then tail the logfile to search for the completion phrase.
   printf "Initializing tor" && templ prog

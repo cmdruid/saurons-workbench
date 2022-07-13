@@ -133,8 +133,11 @@ else
   printf "Lightning daemon is running under PID: $(templ hlight $DAEMON_PID)" && templ ok
 fi
 
-## Start CL-REST Server
-[ -n "$REST_NODE" ] && $LIBPATH/start/cl-rest-start.sh
+## Start CL-REST server.
+$LIBPATH/start/cl-rest-start.sh
+
+## Start RTL server.
+$LIBPATH/start/rtl-start.sh
 
 ###############################################################################
 # Payment Configuration

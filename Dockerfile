@@ -8,17 +8,23 @@ ARG CLNPATH="$HOMEDIR/.lightning"
 
 ## Install dependencies.
 RUN apt-get update && apt-get install -y \
-  curl git iproute2 libevent-dev libsodium-dev lsof man netcat \
-  openssl procps python3 python3-pip qrencode socat xxd neovim
+  curl git iproute2 libevent-dev libsodium-dev lsof man netcat unzip \
+  openssl procps python3 python3-pip python3-venv qrencode socat xxd neovim
 
 ## Install python modules.
-RUN pip3 install pyln-client requests[socks]
+RUN pip3 install pyln-client requests
+
+## Instal Poetry.
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
 ## Install Node.
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash - && apt-get install -y nodejs
 
 ## Install node packages.
 RUN npm install -g npm yarn clightningjs
+
+## Create nessecary folders.
+RUN mkdir -p $HOMEDIR/app
 
 ## Copy over binaries.
 COPY build/out/* /tmp/bin/
@@ -36,16 +42,32 @@ RUN for file in /tmp/bin/*; do \
   ; fi \
 ; done
 
+## Install PGP key for RTL and CL-REST.
+RUN curl https://keybase.io/suheb/pgp_keys.asc | gpg --import
+
+## Install CL-REST.
+RUN curl -fsSLO https://github.com/Ride-The-Lightning/c-lightning-REST/archive/refs/tags/v0.7.2.tar.gz
+RUN curl -fsSLO https://github.com/Ride-The-Lightning/c-lightning-REST/releases/download/v0.7.2/v0.7.2.tar.gz.asc
+RUN gpg --verify v0.7.2.tar.gz.asc v0.7.2.tar.gz \
+  && tar -xvf v0.7.2.tar.gz \
+  && mv c-lightning-REST-0.7.2 $HOMEDIR/app/cl-rest \
+  && cd $HOMEDIR/app/cl-rest \
+  && yarn install --production
+
+## Install RTL.
+RUN curl -fsSLO https://github.com/Ride-The-Lightning/RTL/archive/refs/tags/v0.12.3.tar.gz
+RUN curl -fsSLO https://github.com/Ride-The-Lightning/RTL/releases/download/v0.12.3/v0.12.3.tar.gz.asc
+RUN gpg --verify v0.12.3.tar.gz.asc v0.12.3.tar.gz \
+  && tar -xvf v0.12.3.tar.gz \
+  && mv RTL-0.12.3 $HOMEDIR/app/rtl \
+  && cd $HOMEDIR/app/rtl \
+  && yarn install --production
+
 ## Clean up temporary files.
-RUN rm -rf /tmp/* /var/tmp/*
+#RUN rm -rf /tmp/* /var/tmp/*
 
 ## Uncomment this if you also want to wipe all repository lists.
 #RUN rm -rf /var/lib/apt/lists/*
-
-## Install RTL REST API.
-RUN PLUGPATH="$CLNPATH/plugins" && mkdir -p $PLUGPATH && cd $PLUGPATH \
-  && git clone https://github.com/Ride-The-Lightning/c-lightning-REST.git cl-rest \
-  && cd cl-rest && npm install
 
 ## Configure user account for Tor.
 # RUN addgroup tor \

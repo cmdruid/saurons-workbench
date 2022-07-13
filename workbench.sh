@@ -8,6 +8,7 @@ set -E
 ###############################################################################
 
 DEFAULT_CHAIN="bitcoin"
+DEFAULT_DOMAIN="workbench"
 
 DENVPATH=".env"         ## Path to your local .env file.
 WORKPATH="$(pwd)"       ## Absolute path to use for this directory.
@@ -43,6 +44,8 @@ Build Options  |  Parameters  |  Description
   -w, --wipe                     Delete the existing data volume, and create a new volume.
   -r, --rest                     Enable the CL-REST interface for this node.
   -t, --tor                      Enable the use of Tor and onion services for this node.
+  -n, --chain     STRING         Set the block-chain used by the container (Default is $DEFAULT_CHAIN).
+  -D, --domain    STRING         Set the top-level domain name for the container (Default is $DEFAULT_DOMAIN).
   -M, --mount     INT:EXT        Declare a path to mount within the container. Can be declared multiple times.
   -P, --ports     PORT1,PORT2    List a comma-separated string of ports to open within the container.
   -T, --passthru  STRING         Pass through an argument string to the docker run script.
@@ -117,24 +120,12 @@ create_network() {
 }
 
 remove_image() {
-  [ -n "$IMG_NAME" ] \
-    || ( [ -n "$1" ] && IMG_NAME="$1" ) \
-    || IMG_NAME="$DEFAULT_NAME-img"
-
+  [ -n "$1" ] && IMG_NAME="$1"
+  [ -z "$IMG_NAME" ] && IMG_NAME="$DEFAULT_DOMAIN-img"
   printf "Removing existing image ... "
-
-  if [ -n "$VERBOSE" ]; then printf "\n"; fi
-
-  if ! image_exists; then 
-    printf "Image '$IMG_NAME' does not exist!" && exit 0
-  fi
-
+  [ -n "$VERBOSE" ] && printf "\n"
   docker image rm $IMG_NAME > $LINE_OUT 2>&1
-
-  if image_exists $IMG_NAME; then 
-    printf "failed!\n" && exit 1
-  fi
-
+  image_exists $IMG_NAME && printf "failed!\n" && exit 1
   printf "done.\n"
 }
 
@@ -153,11 +144,11 @@ check_binaries() {
 build_image() {
   check_binaries
   [ -n "$1" ] && IMG_NAME="$1"
-  [ -n "$IMG_NAME" ] || IMG_NAME="$DEFAULT_CHAIN-img"
+  [ -z "$IMG_NAME" ] && IMG_NAME="$DEFAULT_DOMAIN-img"
   printf "Building image for $IMG_NAME from dockerfile ... "
-  if [ -n "$VERBOSE" ]; then printf "\n"; fi
+  [ -n "$VERBOSE" ] && printf "\n"
   DOCKER_BUILDKIT=1 docker build --tag $IMG_NAME . > $LINE_OUT 2>&1
-  if ! image_exists $IMG_NAME; then printf "failed!\n" && exit 1; fi
+  ! image_exists $IMG_NAME && printf "failed!\n" && exit 1
   printf "done.\n"
 }
 
@@ -224,7 +215,8 @@ main() {
     --hostname $SRV_NAME \
     --network $NET_NAME \
     --mount type=volume,source=$DAT_NAME,target=/$DATAPATH \
-    -e DATAPATH="/$DATAPATH" -e ESC_KEYS="$ESC_KEYS" -e CHAIN="$CHAIN" \
+    -e DATAPATH="/$DATAPATH" -e ESC_KEYS="$ESC_KEYS" \
+    -e DOMAIN="$DOMAIN" -e CHAIN="$CHAIN" \
   $HEADMODE $RUN_FLAGS $MOUNTS $PORTS $ENV_STR $ARGS_STR $PASSTHRU $IMG_NAME:latest
 }
 
@@ -247,7 +239,8 @@ for arg in "$@"; do
     -w|--wipe)         WIPE=1;                           shift  ;;
     -d|--devmode)      DEVMODE=1;                        shift  ;;
     -H|--headless)     HEADLESS=1; HEADMODE="";          shift  ;;
-    -T|--passthru)     PASSTHRU=$2;                      shift 2;;                      
+    -T|--passthru)     PASSTHRU=$2;                      shift 2;;
+    -D|--domain)       DOMAIN=$2;                        shift 2;;                      
     -n|--chain)        CHAIN=$2;                         shift 2;;
     -i|--image)        IMG_NAME=$2;                      shift 2;;
     -M|--mount)        add_mount $2;                     shift 2;;
@@ -261,12 +254,13 @@ done
 
 ## Set default variables and flags.
 [ -z "$CHAIN" ]    && CHAIN="$DEFAULT_CHAIN"
-[ -z "$IMG_NAME" ] && IMG_NAME="$CHAIN-img"
+[ -z "$DOMAIN" ]   && DOMAIN="$DEFAULT_DOMAIN"
+[ -z "$IMG_NAME" ] && IMG_NAME="$DOMAIN-img"
 
 ## Define naming scheme.
-NET_NAME="$CHAIN-network"
-SRV_NAME="$TAG.$CHAIN.node"
-DAT_NAME="$TAG.$CHAIN.data"
+NET_NAME="$DOMAIN-network"
+SRV_NAME="$TAG.$DOMAIN.node"
+DAT_NAME="$TAG.$DOMAIN.data"
 
 ## If there's an existing container, remove it.
 if container_exists && [ -n "$NOKILL" ]; then

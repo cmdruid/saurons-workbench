@@ -33,5 +33,5 @@ CookieAuthFile /var/lib/tor/cookie
 ## C-Lighting Hidden Service
 HiddenServiceDir /data/tor/services/cln
 HiddenServiceVersion 3
-HiddenServicePort 9735 127.0.0.1:9735                 ## C-Lightning Peer Service
-HiddenServicePort 9737 127.0.0.1:9737                 ## C-Lightning RPC Service
+HiddenServicePort 9737 127.0.0.1:9737
+
