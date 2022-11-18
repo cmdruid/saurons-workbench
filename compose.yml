@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  sauron-cln:
+    build: .
+    image: sauron-cln:latest
+    container_name: sauron-cln
+    # env_file: .env
+    hostname: sauron-cln
+    init: true
+    networks:
+      - net
+    ports:
+    # - 19735:19735
+      - 9737:9737
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./config:/config:ro
+      - ./data:/root/.lightning:rw
+      - ./home:/root/home:rw
+
+networks:
+  net:
+    name: 'bitcoin'

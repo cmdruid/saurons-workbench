@@ -1,0 +1,39 @@
+.\" -*- mode: troff; coding: utf-8 -*-
+.TH "LIGHTNING-EMERGENCYRECOVER" "7" "" "Core Lightning v0.12.1" ""
+.SH
+NAME
+.LP
+lightning-emergencyrecover -- Command for recovering channels from the emergency.recovery file in the lightning directory
+.SH
+SYNOPSIS
+.LP
+\fBemergencyrecover\fR
+.SH
+DESCRIPTION
+.LP
+The \fBemergencyrecover\fR RPC command fetches data from the emergency.recover
+file and tries to reconnect to the peer and force him to close the channel.
+The data in this file has enough information to reconnect and sweep the funds.
+.PP
+This recovery method is not spontaneous and it depends on the peer, so it should
+be used as a last resort to recover the funds stored in a channel in case of severe
+data loss.
+.SH
+RETURN VALUE
+.LP
+On success, an object is returned, containing:
+- \fBstubs\fR (array of hexs):
+- Each item is the channel ID of the channel successfully inserted
+.SH
+AUTHOR
+.LP
+Aditya <\fIaditya.sharma20111@gmail.com\fR> is mainly responsible.
+.SH
+SEE ALSO
+.LP
+lightning-getsharedsecret(7)
+.SH
+RESOURCES
+.LP
+Main web site: \fIhttps://github.com/ElementsProject/lightning\fR
+\" SHA256STAMP:275716504cee7abd13ab65be8c63e92a67d730dd201b6ddd22fcb4d0cd6f93bb
