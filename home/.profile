@@ -25,5 +25,5 @@ sparkoconnect() {
   [ -z "$SPARK_HOST" ] && SPARK_HOST=127.0.0.1
   [ -z "$SPARK_PORT" ] && SPARK_PORT=443
   APIKEY="$(cat /root/.lightning/sparko.keys | kgrep MASTER_KEY)"
-  printf "http://$SPARK_HOST:$SPARK_PORT?access-key=$APIKEY" | qrcode
+  printf "https://$SPARK_HOST:$SPARK_PORT?access-key=$APIKEY" | qrcode
 }
