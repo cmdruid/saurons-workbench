@@ -7,12 +7,10 @@ set -E
 # Environment
 ###############################################################################
 
-DATA_PATH="/root/.lightning"
-KEYS_FILE="$DATA_PATH/sparko.keys"
-LOGIN_FILE="$DATA_PATH/sparko.login"
+KEYS_FILE="$DATA/spark.keys"
+LOGIN_FILE="$DATA/spark.login"
 
 DEFAULT_SPARK_USER="user"
-
 SECRET_KEY_PERMS="getinfo,listchannels,listnodes"
 INVOICE_KEY_PERMS="pay"
 STREAM_KEY_PERMS="stream"

@@ -1,10 +1,14 @@
-## This file can be used to customize your environment.
+#!/usr/bin/env bash
+## This profile is loaded upon login.
 ## Feel free to add your own aliases and shortcuts!
+
+## Set default variables.
+[ -z "$NETWORK" ]    && export NETWORK="testnet"
 
 ## Run .init on login.
 [ -f '/root/home/.init' ] && . /root/home/.init
 
-## Configure bitcoin-cli.
+## Configure lightning-cli shortcut.
 alias lcli="lightning-cli --network=$NETWORK"
 
 ## Useful for checking open sockets.
@@ -21,8 +25,8 @@ qrcode() {
   echo && qrencode -m 2 -t "UTF8" "$input" && printf "${input}\n\n"
 }
 
-sparkqr() {
-  [ -z "$SPARK_HOST" ] && SPARK_HOST=127.0.0.1:443
-  APIKEY="$(cat /root/.lightning/sparko.keys | kgrep MASTER_KEY)"
-  printf "$SPARK_HOST?access-key=$APIKEY" | qrcode
+spark-qr() {
+  SPARKHOST="$(cat $DATA/.sparkhost)"
+  APIKEY="$(cat /root/.lightning/spark.keys | kgrep MASTER_KEY)"
+  printf "$SPARKHOST?access-key=$APIKEY" | qrcode
 }
