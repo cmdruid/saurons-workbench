@@ -3,7 +3,7 @@
 ## Feel free to add your own aliases and shortcuts!
 
 ## Set default variables.
-[ -z "$NETWORK" ]    && export NETWORK="testnet"
+[ -z "$NETWORK" ] && NETWORK="testnet"
 
 ## Run .init on login.
 [ -f '/root/home/.init' ] && . /root/home/.init

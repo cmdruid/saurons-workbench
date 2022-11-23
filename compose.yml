@@ -5,8 +5,8 @@ services:
     build: .
     image: sauron-cln:latest
     container_name: sauron-cln
-    env_file: .env
     hostname: sauron-cln
+    env_file: .env
     init: true
     networks:
       - net

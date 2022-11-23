@@ -33,7 +33,8 @@ COPY config /config/
 COPY home /root/home/
 
 ## Link entrypoint script to bin.
-RUN ln -s $ROOTHOME/entrypoint.sh /usr/local/bin/entrypoint
+RUN mkdir -p /usr/bin
+RUN ln -s $ROOTHOME/entrypoint.sh /usr/bin/entrypoint
 
 ## Add custom profile to bashrc.
 RUN PROFILE="$ROOTHOME/.profile" \
